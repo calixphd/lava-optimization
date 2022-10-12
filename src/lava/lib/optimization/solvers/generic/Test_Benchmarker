@@ -3,9 +3,10 @@
 # See: https://spdx.org/licenses/
 
 
+import numpy as np
+import matplotlib.pyplot as plt
 import unittest
 from lava.lib.optimization.utils.solver_benchmarker import SolverBenchmarker, SolverBenchmarkerDatabase
-
 
 class TestSolverBenchmarker (unittest.TestCase):
     
@@ -18,3 +19,21 @@ class TestSolverBenchmarker (unittest.TestCase):
 
     def test_database_is_created(self):
         self.assertIsInstance(self.benchmarker, SolverBenchmarkerDatabase)
+
+    def test_create_tables_for_power(self, workload: list, num_of_steps: list):
+        self.assertIsInstance(self.workload, SolverBenchmarkerDatabase.benchmark_Power_measurements)
+
+    def test_create_tables_for_time(self, work_load: list, num_of_steps: list):
+        self.assertIsInstance(self.workload, SolverBenchmarkerDatabase.benchmark_Power_measurements)
+
+    def test_create_edp_plots(self, avg_time_per_timestep = SolverBenchmarkerDatabase.benchmark_time_measurements, total_power= SolverBenchmarkerDatabase.benchmark_power_measurements):
+        fig, ax = plt.subplots()
+        color = next(ax._get_lines.prop_cycler)['color']
+        ax.plot(total_power, color=color, label='Total Power')
+        ax.plot(np.zeros_like(total_power),   linestyle='--', color=color, label='Total Power')
+        color = next(ax._get_lines.prop_cycler)['color']
+        ax.set_ylabel('Power (W)')
+        ax.set_xticks([])
+        ax.legend()
+        plt.show()
+        self.assertTrue(total_power > 0)

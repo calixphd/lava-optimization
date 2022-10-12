@@ -9,4 +9,9 @@ class SolverBenchmarker:
 
 class SolverBenchmarkerDatabase:
     """Creates a database for energy and time measurements."""
+    def benchmark_Power_measurements():
+        pass
     pass
+
+avg_time_per_timestep
+total_power
