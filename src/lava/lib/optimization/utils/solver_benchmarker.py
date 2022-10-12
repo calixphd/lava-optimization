@@ -6,3 +6,7 @@
 class SolverBenchmarker:
     """Measure power and execution time for an optimization solver."""
     pass
+
+class SolverBenchmarkerDatabase:
+    """Creates a database for energy and time measurements"""
+    pass

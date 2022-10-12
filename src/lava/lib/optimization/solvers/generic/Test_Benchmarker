@@ -4,7 +4,7 @@
 
 
 import unittest
-from lava.lib.optimization.utils.solver_benchmarker import SolverBenchmarker
+from lava.lib.optimization.utils.solver_benchmarker import SolverBenchmarker, SolverBenchmarkerDatabase
 
 
 class TestSolverBenchmarker (unittest.TestCase):
@@ -15,3 +15,6 @@ class TestSolverBenchmarker (unittest.TestCase):
 
     def test_benchmarker_instance_is_created(self):
         self.assertIsInstance(self.benchmarker, SolverBenchmarker)
+
+    def test_database_is_created(self):
+        self.assertIsInstance(self.benchmarker, SolverBenchmarkerDatabase)
