@@ -1,0 +1,97 @@
+# Copyright (C) 2022 Intel Corporation
+# SPDX-License-Identifier: BSD-3-Clause
+# See: https://spdx.org/licenses/
+
+
+import unittest
+from kiwisolver import Solver
+
+import numpy as np
+
+from lava.lib.optimization.problems.coefficients import CoefficientTensorsMixin
+import typing as ty
+
+import numpy.typing as npt
+from lava.lib.optimization.problems.problems import QUBO, OptimizationProblem
+from lava.lib.optimization import OptimizationSolver
+from lava.utils.loihi2_profiler import (
+    Loihi2Power, Loihi2ExecutionTime, Loihi2Activity, Loihi2Memory
+)
+
+class TestSolverBenchmarker (unittest.TestCase):
+    
+    run_lib_tests: bool = (Utils.get_bool_env_setting("RUN_LIB_TESTS"))
+    skip_message_loihi = 'Library tests not set to run'
+
+    
+    @unittest.skipIf(run_lib_tests, skip_message_loihi)
+    
+    
+#set up benchmarker
+    def setUp(self) -> None:
+        self.problem = QUBO(
+            np.asarray([[-5,2,4,0],
+                        [2,-3,1,0],
+                        [4,1,-8,5],
+                        [0,0,5,-6]]))
+        
+        self.solution= np.asarray([1,0,0,1]).astype(int)
+        self.solver= OptimizationSolver(problem=self.problem)
+
+
+#is test_obj_created?
+    def test_create_obj(self):
+        for problem, solver in [
+            (self.problem, "workload created"),
+            (self.solver, "solver created"),
+        ]:
+            with self.subTest(msg=f"{solver}"):
+                self.assertIsInstance(problem, solver)
+
+
+    def test_get_results(self) -> None:
+
+        
+        def interpret_float(x):
+            return c_float.from_buffer(c_int(x)).value
+
+        time = []
+        vdd = []
+        vddm = []
+        vddio = []
+        total_power =[]
+
+
+ # check if the network is executed on Loihi
+   #benchmarker.create_database()
+    def test_create_data_base(self):
+
+        results = self.host_channel.read(1)
+        num_readings = results[0]
+
+    def interpret_float(x):
+            return c_float.from_buffer(c_int(x)).value
+
+    def test_meaure_energy(self)-> None:
+        if measure_energy== True:
+            power_logger = Loihi2Power(num_steps=10000)
+            vdd = power_logger.vdd_power  # neurocore power
+            vddm = power_logger.vddm_power  # memory power
+            vddio = power_logger.vddio_power  # IO power
+            total_power = power_logger.total_power  # Total power
+            self.assertTrue(total_power > 0)
+            self.assertTrue(vdd > 0)
+            self.assertTrue(vddm > 0)
+            self.assertTrue(vddio > 0)
+            self.assertTrue(total_power > 0)
+
+    
+    
+    def test_measure_time(self)-> None:
+        if measure_time == True:
+            power_logger = Loihi2Power(num_steps=10000)
+            time = power_logger.time
+            self.assertTrue(time > 0)
+
+    
+
