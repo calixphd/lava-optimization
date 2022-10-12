@@ -8,5 +8,5 @@ class SolverBenchmarker:
     pass
 
 class SolverBenchmarkerDatabase:
-    """Creates a database for energy and time measurements"""
+    """Creates a database for energy and time measurements."""
     pass
