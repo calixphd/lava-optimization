@@ -132,13 +132,13 @@ class StochasticIntegrateAndFireModelSCIF(AbstractSubProcessModel):
                              step_size=step_size,
                              theta=theta,
                              cost_diag=cost_diagonal,
-                             neg_tau_ref=0,
+                             neg_tau_ref=1,
                              noise_amplitude=noise_amplitude)
         proc.in_ports.added_input.connect(self.scif.in_ports.a_in)
         self.scif.s_wta_out.connect(proc.out_ports.messages)
         self.scif.s_sig_out.connect(proc.out_ports.local_cost)
 
-        proc.vars.prev_assignment.alias(self.scif.vars.state)
+        proc.vars.prev_assignment.alias(self.scif.vars.spk_hist)
         proc.vars.state.alias(self.scif.vars.state)
         proc.vars.cost_diagonal.alias(self.scif.vars.cost_diagonal)
         proc.vars.noise_amplitude.alias(self.scif.vars.noise_ampl)
@@ -188,7 +188,7 @@ class StochasticIntegrateAndFireModel(PyLoihiProcessModel):
         self.firing[:] = self.do_fire(self.state)
         self.reset_state(firing_vector=self.firing[:])
         self.messages.send(self.firing[:])
-        self.local_cost.send(-local_cost)
+        self.local_cost.send(local_cost)
 
     def iterate_dynamics(self, added_input: np.ndarray, state: np.ndarray):
         integration_decay = 1
