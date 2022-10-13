@@ -37,52 +37,6 @@ class SolverBenchmarker():
         self._time_logger = None
         self.num_steps = num_steps
 
-        ############
-        """database setup to get benchmarking data"""
-        def get_results(self) -> None:
-            results = self.host_channel.read(1)
-            num_readings = results[0]
-        def interpret_float(x):
-            return c_float.from_buffer(c_int(x)).value
-
-        time = []
-        vdd = []
-        vddm = []
-        vddio = []
-
-        while num_readings != 0:
-            results = self.host_channel.read(4 * num_readings)
-            for i in range(0, 4 * num_readings, 4):
-                time.append(interpret_float(results[i]))
-                vdd.append(interpret_float(results[i + 1]))
-                vddm.append(interpret_float(results[i + 2]))
-                vddio.append(interpret_float(results[i + 3]))
-            results = self.host_channel.read(1)
-            num_readings = results[0]
-
-        if len(vdd) > 20:
-
-            vdd = signal.medfilt(np.array(vdd), 11)
-            vddm = signal.medfilt(np.array(vddm), 11)
-            vddio = signal.medfilt(np.array(vddio), 11)
-        else:
-            vdd = np.array(vdd)
-            vddm = np.array(vddm)
-            vddio = np.array(vddio)
-            warnings.warn(f'Power measurement dynamics is slow. '
-                          f'Power profiler was able to measure only '
-                          f'{len(vdd) // 2} data points when the network was '
-                          f'running. Consider increasing power profiler '
-                          f'num_steps = {self.num_steps} for a '
-                          f'reliable measurement.')
-
-        np.save(self.temp_dir + 'time_stamp.npy', time)
-        np.save(self.temp_dir + 'vdd.npy', vdd)
-        np.save(self.temp_dir + 'vddm.npy', vddm)
-        np.save(self.temp_dir + 'vddio.npy', vddio)
-
-        #######
-
     def check_if_loihi2_is_available():
         runtime_test =Utils.is_loihi2_available \
         and Utils.get_bool_env_setting("RUN_LOIHI_TESTS")
