@@ -24,6 +24,7 @@ from lava.proc.read_gate.ncmodels import ReadGateCModel
 from lava.proc.read_gate.process import ReadGate
 from lava.proc.scif.ncmodels import NcModelQuboScif
 from lava.proc.scif.process import QuboScif
+from lava.lib.optimization.utils.solver_benchmarker import SolverBenchmarker
 
 BACKENDS = ty.Union[CPU, Loihi2NeuroCore, NeuroCore, str]
 CPUS = [CPU, "CPU"]
@@ -86,6 +87,7 @@ class OptimizationSolver:
         self._process_builder = SolverProcessBuilder()
         self.solver_process = None
         self.solver_model = None
+        self.benchmarker = SolverBenchmarker()
 
     @property
     def run_cfg(self):
@@ -101,7 +103,9 @@ class OptimizationSolver:
               target_cost: int = 0,
               backend: BACKENDS = CPU,
               hyperparameters: ty.Dict[
-                  str, ty.Union[int, npt.ArrayLike]] = None) \
+                  str, ty.Union[int, npt.ArrayLike]] = None,
+              measure_time: bool = False,
+              measure_power: bool = False) \
             -> npt.ArrayLike:
         """Create solver from problem spec and run until target_cost or timeout.
 
@@ -126,6 +130,10 @@ class OptimizationSolver:
 
         """
         run_cfg = None
+        if measure_time and measure_power:
+            raise NotImplementedError("For now only one of power or time can "
+                                      "be measured at a time")
+        do_benchmark = measure_time or measure_power
         if not self.solver_process:
             self._create_solver_process(self.problem, target_cost, backend,
                                         hyperparameters)
@@ -145,8 +153,20 @@ class OptimizationSolver:
                          StochasticIntegrateAndFireModelSCIF,
                      QuboScif: NcModelQuboScif,
                      }
+            pre_run_fxs, post_run_fxs = None, None
+            if do_benchmark:
+                board = None
+                if measure_power:
+                    pre_run_fxs, post_run_fxs = \
+                        self._benchmarker.get_power_measurement_cfg(board,
+                                                                    num_steps=timeout)
+                elif measure_time:
+                    pre_run_fxs, post_run_fxs = \
+                        self._benchmarker.get_time_measurement_cfg(board)
             run_cfg = Loihi2HwCfg(exception_proc_model_map=pdict,
-                                  select_sub_proc_model=True)
+                                  select_sub_proc_model=True,
+                                  pre_run_fxs=pre_run_fxs,
+                                  post_run_fxs=post_run_fxs)
         else:
             raise NotImplementedError(str(backend) + backend_msg)
         self.solver_process._log_config.level = 20

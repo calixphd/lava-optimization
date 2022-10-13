@@ -25,50 +25,56 @@ from lava.magma.compiler.subcompilers.constants import \
 from lava.magma.core.run_configs import Loihi2SimCfg, Loihi2HwCfg
 from lava.magma.core.run_conditions import RunSteps
 
-def is_loihi2_available(self):
-    runtime_test =Utils.is_loihi2_available \
-    and Utils.get_bool_env_setting("RUN_LOIHI_TESTS")
-    Loihi2.preferred_partition = 'kp_build' #selelct preferred partition
-    return Loihi2.is_loihi2_available
-    
-def import_profiler_if_loihi2_is_available(self):
-    if self.is_loihi2_available():
-        print(f'Running on {Loihi2.partition}')
-        from lava.utils import loihi2_profiler
-    else:
-        RuntimeError("Loihi2 compiler is not available in this system. "
-                "Problem benchmarking cannot proceed.")
-
-import_profiler_if_loihi2_is_available()
-
+if Loihi2.is_loihi2_available:
+    print(f'Running on {Loihi2.partition}')
+    from lava.utils import loihi2_profiler
+else:
+    RuntimeError("Loihi2 compiler is not available in this system. "
+            "Problem benchmarking cannot proceed.")
 
 class SolverBenchmarker():
     """Measure power and execution time for an optimization solver."""
-    def __init__(self, num_steps: int):
+    def __init__(self):
         self._power_logger = None
         self._time_logger = None
-        self.num_steps = num_steps
                        
-    def setup_power_measurement(self, board):
-        #configures profiling tools
-        self._power_logger = loihi2_profiler.Loihi2Power(num_steps=self.num_steps)
-        """The profiler tools can be enabled on the Loihi 2 system 
+    def get_power_measurement_cfg(self, board, num_steps):
+        """The profiler tools can be enabled on the Loihi 2 system
         as the workload runs through pre_run_fxs and post_run_fxs
         which are used to attach the profiling tools."""
+        #configures profiling tools
+        self._power_logger = loihi2_profiler.Loihi2Power(num_steps=num_steps)
         pre_run_fxs = [
             lambda board: self._power_logger.attach(board),
         ]
         post_run_fxs = [
             lambda board: self._power_logger.get_results(),
         ]
-        run_config = Loihi2HwCfg(pre_run_fxs=pre_run_fxs,
-                         post_run_fxs=post_run_fxs)
-        self._log_config.level = logging.INFO
-        self.run(condition=RunSteps(num_steps=self.num_steps), run_cfg=run_config)
-        self.stop()
+        return pre_run_fxs, post_run_fxs
 
-        # post processing
-        time_stamp = self._power_logger.time_stamp
+    def get_time_measurement_cfg(self, board):
+        self._time_logger = loihi2_profiler.Loihi2ExecutionTime()
+        pre_run_fxs = [
+            lambda board: self._time_logger.attach(board),
+        ]
+        post_run_fxs = [
+            lambda board: self._time_logger.get_results(),
+        ]
+        return pre_run_fxs, post_run_fxs
+
+    def plot_time_data(self):
+        pass
+
+    @property
+    def measured_power(self):
+        return self._power_logger.total_power
+
+    @property
+    def measured_time(self):
+        return self._time_logger.time_per_step.sum()
+
+
+    def plot_power_data(self):
         vdd_p = self._power_logger.vdd_power  # neurocore power
         vddm_p = self._power_logger.vddm_power  # memory power
         vddio_p = self._power_logger.vddio_power  # IO power
@@ -105,21 +111,3 @@ class SolverBenchmarker():
         ax.legend()
         plt.show()
 
-    def setup_time_measurement(self, board):
-        self._time_logger = loihi2_profiler.Loihi2ExecutionTime()
-        pre_run_fxs = [
-            lambda board: self._time_logger.attach(board),
-        ]
-        post_run_fxs = [
-            lambda board: self._time_logger.get_results(),
-        ]
-
-        run_config = Loihi2HwCfg(pre_run_fxs=pre_run_fxs,
-                         post_run_fxs=post_run_fxs)
-        self._log_config.level = logging.INFO
-        self.run(condition=RunSteps(num_steps=self.num_steps), run_cfg=run_config)
-        self.stop()
-        plt.plot(time_series, label='Network Runtime')
-        plt.ylabel('Time per timestep (us)')
-        plt.xlabel('timestep')
-        plt.show()
