@@ -16,14 +16,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 from lava.utils.system import Loihi2
-from tests.lava.test_utils.utils import Utils
-import logging
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 from lava.magma.compiler.subcompilers.constants import \
     MAX_EMBEDDED_CORES_PER_CHIP
-from lava.magma.core.run_configs import Loihi2SimCfg, Loihi2HwCfg
-from lava.magma.core.run_conditions import RunSteps
 
 if Loihi2.is_loihi2_available:
     print(f'Running on {Loihi2.partition}')
@@ -73,6 +70,22 @@ class SolverBenchmarker():
     def measured_time(self):
         return self._time_logger.time_per_step.sum()
 
+    #generate pandas plot of data array with power labels
+    def plot_power_data(self):
+        power_data= np.mean(total_power=self._power_logger.total_power)
+        df=pd.DataFrame(power_data, olumns=['problem_size','Power_used'])
+        df.plot(x ='problem_size', y='power_used', kind = 'scatter')
+        plt.show()
+        
+
+    #generate pandas plot of data array with time labels
+    def plot_time_data(self):
+        time_data= np.mean(total_time= self._time_logger.time_per_step.sum())
+        df=pd.DataFrame(time_data, olumns=['problem_size','time_used'])
+        df.plot(x ='problem_size', y='time_used', kind = 'scatter')
+        plt.show()
+    
+    
 
     def plot_power_data(self):
         vdd_p = self._power_logger.vdd_power  # neurocore power
