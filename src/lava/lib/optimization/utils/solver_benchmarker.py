@@ -1,34 +1,30 @@
-# Copyright (C) 2021 Intel Corporation
-# SPDX-License-Identifier: BSD-3-Clause
+# INTEL CORPORATION CONFIDENTIAL AND PROPRIETARY
+#
+# Copyright © 2022 Intel Corporation.
+#
+# This software and the related documents are Intel copyrighted
+# materials, and your use of them is governed by the express
+# license under which they were provided to you (License). Unless
+# the License provides otherwise, you may not use, modify, copy,
+# publish, distribute, disclose or transmit  this software or the
+# related documents without Intel's prior written permission.
+#
+# This software and the related documents are provided as is, with
+# no express or implied warranties, other than those that are
+# expressly stated in the License.
 # See: https://spdx.org/licenses/
-
+# SPDX-License-Identifier: BSD-3-Clause
 
 from lava.utils.system import Loihi2
 from tests.lava.test_utils.utils import Utils
 import logging
 import numpy as np
-from ctypes import c_int, c_float
 import matplotlib.pyplot as plt
-import os
-import re
-import atexit
-import shutil
-import warnings
-import numpy as np
-from scipy import signal
-from ctypes import c_int, c_float
-
 from lava.magma.compiler.subcompilers.constants import \
     MAX_EMBEDDED_CORES_PER_CHIP
-from nxcore.graph.processes.phase_enums import Phase
-from nxcore.arch.n3b.n3board import N3Board
-from nxcore.api.enums import BoardProbeParameter
-from nxcore.graph.monitor.probes import PerformanceProbeCondition
-
 from lava.magma.core.run_configs import Loihi2SimCfg, Loihi2HwCfg
 from lava.magma.core.run_conditions import RunSteps
 from  lava.utils import loihi2_profiler
-from  lava.utils.loihi2_profiler import Loihi2Power, Loihi2ExecutionTime
 
 class SolverBenchmarker():
     """Measure power and execution time for an optimization solver."""
