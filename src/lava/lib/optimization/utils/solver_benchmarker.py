@@ -24,7 +24,23 @@ from lava.magma.compiler.subcompilers.constants import \
     MAX_EMBEDDED_CORES_PER_CHIP
 from lava.magma.core.run_configs import Loihi2SimCfg, Loihi2HwCfg
 from lava.magma.core.run_conditions import RunSteps
-from  lava.utils import loihi2_profiler
+
+def is_loihi2_available(self):
+    runtime_test =Utils.is_loihi2_available \
+    and Utils.get_bool_env_setting("RUN_LOIHI_TESTS")
+    Loihi2.preferred_partition = 'kp_build' #selelct preferred partition
+    return Loihi2.is_loihi2_available
+    
+def import_profiler_if_loihi2_is_available(self):
+    if self.is_loihi2_available():
+        print(f'Running on {Loihi2.partition}')
+        from lava.utils import loihi2_profiler
+    else:
+        RuntimeError("Loihi2 compiler is not available in this system. "
+                "Problem benchmarking cannot proceed.")
+
+import_profiler_if_loihi2_is_available()
+
 
 class SolverBenchmarker():
     """Measure power and execution time for an optimization solver."""
@@ -32,18 +48,6 @@ class SolverBenchmarker():
         self._power_logger = None
         self._time_logger = None
         self.num_steps = num_steps
-
-    def check_if_loihi2_is_available():
-        runtime_test =Utils.is_loihi2_available \
-        and Utils.get_bool_env_setting("RUN_LOIHI_TESTS")
-        Loihi2.preferred_partition = 'kp_build' #selelct preferred partition
-        loihi2_is_available = Loihi2.is_loihi2_available
-        if loihi2_is_available:
-            print(f'Running on {Loihi2.partition}')
-            from lava.utils import loihi2_profiler
-        else:
-            RuntimeError("Loihi2 compiler is not available in this system. "
-                 "Problem benchmarking cannot proceed.")
                        
     def setup_power_measurement(self, board):
         #configures profiling tools
@@ -115,3 +119,7 @@ class SolverBenchmarker():
         self._log_config.level = logging.INFO
         self.run(condition=RunSteps(num_steps=self.num_steps), run_cfg=run_config)
         self.stop()
+        plt.plot(time_series, label='Network Runtime')
+        plt.ylabel('Time per timestep (us)')
+        plt.xlabel('timestep')
+        plt.show()
