@@ -70,23 +70,43 @@ class SolverBenchmarker():
     def measured_time(self):
         return self._time_logger.time_per_step.sum()
 
-    #generate pandas plot of data array with power labels
-    def plot_power_data(self):
+    
+    @property
+    def get_power_data_pandas(self):
         power_data= np.mean(total_power=self._power_logger.total_power)
-        df=pd.DataFrame(power_data, olumns=['problem_size','Power_used'])
-        df.plot(x ='problem_size', y='power_used', kind = 'scatter')
+        return power_data
+
+    @property
+    def get_time_data_pandas(self):
+        time_data= np.mean(total_time= self._time_logger.time_per_step.sum())
+        return time_data
+    
+    #generate pandas plot of data array with power labels
+    def display_power_plots(self, power_data):
+        df_power_data_frame=pd.DataFrame(power_data, columns=['problem_size','Power_used'])
+        print(df_power_data_frame.shape)
+        df_power_data_frame.info()
+        df_power_data_frame.plot(x ='problem_size', y='power_used', kind = 'scatter')
         plt.show()
         
-
     #generate pandas plot of data array with time labels
-    def plot_time_data(self):
-        time_data= np.mean(total_time= self._time_logger.time_per_step.sum())
-        df=pd.DataFrame(time_data, olumns=['problem_size','time_used'])
-        df.plot(x ='problem_size', y='time_used', kind = 'scatter')
+    def display_time_plots(self, time_data):
+        df_time=pd.DataFrame(time_data, columns=['problem_size','time_to_solution'])
+        print(df_time.shape)
+        df_time.info()
+        df_time.plot(x ='problem_size', y='time_to_solution', kind = 'scatter')
         plt.show()
     
-    
-
+    #generate pandas plot of Energy usage
+    @property
+    def energy_plots(time_data, power_data):
+        energy_data =time_data @ power_data
+        df_energy_data_frame=pd.DataFrame(energy_data, columns=['problem_size','total_energy_used'])
+        print(df_energy_data_frame.shape)
+        df_energy_data_frame.info()
+        df_energy_data_frame.plot(x ='problem_size', y='total_energy_used', kind = 'scatter')
+        plt.show()
+        
     def plot_power_data(self):
         vdd_p = self._power_logger.vdd_power  # neurocore power
         vddm_p = self._power_logger.vddm_power  # memory power
