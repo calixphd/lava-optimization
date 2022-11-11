@@ -1,18 +1,10 @@
 #Copyright (C) 2022 Intel Corporation*<br>
 #SPDX-License-Identifier: BSD-3-Clause*<br>
 #See: https://spdx.org/licenses/*
-
-
-# Quadratic Unconstrained Binary Optimization (QUBO) with Lava
-#To solve QUBOs in Lava, we import the corresponding modules.
-
 # Interface for QUBO problems
+
 from lava.lib.optimization.problems.problems import QUBO
-# Generic optimization solver
 from lava.lib.optimization.solvers.generic.solver import OptimizationSolver, solve
-
-#In addition, we import auxiliary modules to generate the workloads and run the solver.
-
 import os
 import numpy as np
 import networkx as ntx
@@ -28,21 +20,12 @@ if loihi2_is_available:
     os.environ["PARTITION"] = "oheogulch"
 
 example_workloads = {
-    1: {'n_vert': 45, 'p_edge': 0.7, 'seed_graph': 5530, 'w_diag': 1, 'w_off': 4, 'cost_optimal': -5.0},
+    1: {'n_vert': 15, 'p_edge': 0.7, 'seed_graph': 5530, 'w_diag': 1, 'w_off': 4, 'cost_optimal': -5.0},
     2: {'n_vert': 45, 'p_edge': 0.5, 'seed_graph': 7865, 'w_diag': 1, 'w_off': 4, 'cost_optimal': -7.0, },
-    3: {'n_vert': 45, 'p_edge': 0.3, 'seed_graph': 7079, 'w_diag': 3, 'w_off': 8, 'cost_optimal': -33.0},
-    4: {'n_vert': 200, 'p_edge': 0.9, 'seed_graph': 6701, 'w_diag': 3, 'w_off': 8, 'cost_optimal': -12.0},
-    5: {'n_vert': 200, 'p_edge': 0.7, 'seed_graph': 2999, 'w_diag': 3, 'w_off': 8, 'cost_optimal': -21.0},
-    6: {'n_vert': 200, 'p_edge': 0.5, 'seed_graph': 6814, 'w_diag': 3, 'w_off': 8, 'cost_optimal': -33.0},
-    7: {'n_vert': 500, 'p_edge': 0.9, 'seed_graph': 7757, 'w_diag': 3, 'w_off': 8, 'cost_optimal': -15.0},
-    8: {'n_vert': 500, 'p_edge': 0.7, 'seed_graph': 7757, 'w_diag': 3, 'w_off': 8, 'cost_optimal': -24.0},
-    9: {'n_vert': 700, 'p_edge': 0.9, 'seed_graph': 4155, 'w_diag': 1, 'w_off': 4, 'cost_optimal': -5.0},
-    10: {'n_vert': 700, 'p_edge': 0.85, 'seed_graph': 4840, 'w_diag': 3, 'w_off': 7, 'cost_optimal': -18.0},
-    11: {'n_vert': 1000, 'p_edge': 0.9, 'seed_graph': 4044, 'w_diag': 3, 'w_off': 7, 'cost_optimal': -27.0},
+    3: {'n_vert': 45, 'p_edge': 0.7, 'seed_graph': 7079, 'w_diag': 3, 'w_off': 8, 'cost_optimal': -33.0},
     }
 
-
-workload = example_workloads[7]
+workload = example_workloads[1]
 
 # Import utility functions to create and analyze MIS workloads
 from lava.lib.optimization.utils.generators.mis import MISProblem
@@ -52,7 +35,7 @@ from lava.lib.optimization.utils.generators.mis import MISProblem
 mis = MISProblem(num_vertices=workload['n_vert'], connection_prob=workload['p_edge'], seed=workload['seed_graph'])
 
 # Translate the MIS problem for this graph into a QUBO matrix
-w_mult = 3 # CAN BE ADJUSTED
+w_mult = 1 # CAN BE ADJUSTED
 q = mis.get_qubo_matrix(w_diag=w_mult*workload['w_diag'], w_off=w_mult*workload['w_off'])
 
 # Create the qubo problem
@@ -72,75 +55,42 @@ print(cost_opt)
 
 solver = OptimizationSolver(qubo_problem)
 
-# Provide hyperparameters for the solver  # CAN BE ADJUSTED
-# Guidance on the hyperparameter search will be provided in the deep dive tutorial
-hyperparameters = {
-    "steps_to_fire": 171,
-    "noise_amplitude": 13,
-    "noise_precision": 13,
-    "step_size": 1110,}
-
-if loihi2_is_available:
-    backend = 'Loihi2'
-else:
-    backend = 'CPU'
-
-# Solve the QUBO using Lava's OptimizationSolver on CPU
-# Change "backend='Loihi2'" if your system has physical access to this chip
-# solution_loihi = solver.solve(timeout=190000, # Todo: Set to rough number of time steps required to obtain optimum solution
-#                               hyperparameters=hyperparameters,
-#                               target_cost=cost_opt,
-#                               backend=backend)
-
-# print(f'\nSolution of the provided QUBO: {np.where(solution_loihi == 1.)[0]}.')
-
 def stop(best_cost, best_to_sol):
-    return best_cost <= cost_opt
+     return best_cost <= cost_opt
 
 #Stochastic search for a set of optimal hyperparameters with SolverTuner
 
 from lava.lib.optimization.utils.solver_tuner import SolverTuner
 
-params_grid = {
-    "steps_to_fire": (1, 731),
-    "noise_amplitude": (1, 17),
-    "noise_precision": (1, 19),
-    "step_size": (700, 2710),
+search_space = {
+    #"steps_to_fire": (9, 11),
+    "noise_amplitude": (0,1, 2,3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13),
+    "noise_precision": (0, 1,2,3, 4, 5, 6, 7),
+    "step_size": (0,5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75),
 }
+search_space, params_names = SolverTuner.generate_grid(search_space)
+solver_tuner = SolverTuner(search_space=search_space, params_names= params_names, shuffle= False )
 
-solver_tuner = SolverTuner(params_grid=params_grid)
-
-params = {"timeout": 10000000,
+params = {"timeout": 700,
           "target_cost": int(cost_opt),
-          "backend": "Loihi2"}
-print(params)
+          "backend": "CPU"}
+    #print(params)
+def fitness(cost, step_to_sol):
+        return - step_to_sol if cost <= params['target_cost'] \
+         else - float("inf")
 
-hyperparams, success = solver_tuner.tune(solver=solver,
-                                         solver_parameters=params,
-                                         stopping_condition=stop)
-print(params)
+fitness_target = -200
 
+hyperparams, success = solver_tuner.tune(
+                solver=solver,
+                solver_params=params,
+                fitness_fn=fitness,
+                fitness_target=fitness_target
+            )
+print(f"{hyperparams, success}")
 
 # Find the optimal solution to the MIS problem
 solution_opt = mis.find_maximum_independent_set()
 
 # Calculate the QUBO cost of the optimal solution
 cost_opt = qubo_problem.evaluate_cost(solution=solution_opt)
-
-# Calculate the QUBO cost of Lava's solution
-cost_lava = qubo_problem.evaluate_cost(solution=solution_loihi)
-
-print(f'QUBO cost of solution: {cost_lava} (Lava) vs. {cost_opt} (optimal)\n')
-
-"""Pickl database for hyperparameters"""
-class Hyperparameters:pass
-selected_parameters = Hyperparameters()
-
-selected_parameters.steps_to_fire = 
-selected_parameters.noise_amplitude =
-selected_parameters.noise_precision =
-selected_parameters.step_size =
-
-
-filehandler = open(b"hyperparameter_obj","wb")
-pickle.dump(,filehandler)

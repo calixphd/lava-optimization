@@ -98,3 +98,6 @@ class QuboScif(AbstractScif):
         # User provides a desired precision. We convert it to the amount by
         # which unsigned 16-bit noise is right-shifted:
         self.noise_shift = Var(shape=shape, init=noise_shift)
+
+        # Initial value must be diagonal elements, see Word document
+        self.state = Var(shape=shape, init=cost_diag)
