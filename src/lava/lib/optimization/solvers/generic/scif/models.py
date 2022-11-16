@@ -4,6 +4,8 @@
 from abc import abstractmethod
 
 import numpy as np
+import math
+import random
 
 from lava.magma.core.sync.protocols.loihi_protocol import LoihiProtocol
 from lava.magma.core.model.py.ports import PyInPort, PyOutPort
@@ -201,7 +203,17 @@ class PyModelQuboScifFixed(PyLoihiProcessModel):
 
     def __init__(self, proc_params):
         super(PyModelQuboScifFixed, self).__init__(proc_params)
-        self.a_in_data = np.zeros(proc_params['shape'])
+        self.a_in_data = np.random.default_rng(seed=random.randint(0, 1000)).binomial(n=1, p=0.9, size= proc_params['shape'])
+        
+
+        #print('#' * 20)
+        #print(f"Input : {self.a_in_data}\n")
+        #print(f"WTA spike indices: {wta_spk_idx}\n")
+        #print(f"lfsr: {lfsr}\n")
+        #print(f"State: {self.state}\n")
+        #print(f"Output: {s_wta}\n")
+        #print('#' * 20)
+        #print()
 
     def _prng(self):
         """Pseudo-random number generator
@@ -260,7 +272,10 @@ class PyModelQuboScifFixed(PyLoihiProcessModel):
         wta_spk_idx_prev = spk_hist_buffer
 
         # WTA spike indices when threshold is exceeded
-        wta_spk_idx = (2*self.step_size <= - self.state + self.step_size*lfsr)
+        inverse_temp = 1/self.step_size
+        boltzmann_exponent=  math.log2(math.e)*self.state
+
+        wta_spk_idx = (lfsr >= 1 + 2**(inverse_temp*boltzmann_exponent))
         # Exceeds
         # threshold
         # Spiking neuron voltages go in refractory (if neg_tau_ref < 0)

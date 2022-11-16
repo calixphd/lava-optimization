@@ -8,10 +8,6 @@ from lava.lib.optimization.solvers.generic.solver import OptimizationSolver, sol
 import os
 import numpy as np
 import networkx as ntx
-import pandas as pd
-import seaborn as sns
-
-
 #If Loihi 2 hardware is available, we can take advantage of the large speed and energy efficiency of this chip to solve QUBOs. To access the chip, we must configure the following environment variables:
 
 from lava.utils.system import Loihi2
@@ -24,8 +20,8 @@ if loihi2_is_available:
     os.environ["PARTITION"] = "oheogulch"
 
 example_workloads = {
-    1: {'n_vert': 200, 'p_edge': 0.9, 'seed_graph': 1, 'w_diag': 1, 'w_off': 4},
-    2: {'n_vert': 45, 'p_edge': 0.7, 'seed_graph': 7865, 'w_diag': 1, 'w_off': 4, 'cost_optimal': -7.0, },
+    1: {'n_vert': 500, 'p_edge': 0.9, 'seed_graph': 6530, 'w_diag': 3, 'w_off': 8, 'cost_optimal': -5.0},
+    2: {'n_vert': 45, 'p_edge': 0.5, 'seed_graph': 7865, 'w_diag': 1, 'w_off': 4, 'cost_optimal': -7.0, },
     3: {'n_vert': 45, 'p_edge': 0.7, 'seed_graph': 7079, 'w_diag': 3, 'w_off': 8, 'cost_optimal': -33.0},
     }
 
@@ -68,21 +64,22 @@ from lava.lib.optimization.utils.solver_tuner import SolverTuner
 
 search_space = {
     #"steps_to_fire": (9, 11),
-    "noise_amplitude": (3, 4, 5, 6, 7, 8, 9,10,),
-    "noise_precision": (2, 3, 4,),# 5,6),
-    "step_size": (40,41, 42, 43, 44,45,47, 50,52, 55,57, 60, 62, 65, 67, 70, 72, 75,80, 85 ) 
+    "noise_amplitude": ( 1,2,3,4,5, 6, 7,8,9,10,11,12,13,14,17),
+    "noise_precision": (0, 1, 2,3,4,5,6,7,8,9,10,11,12),
+    "step_size": (630,720,775, 615, 525,335, 345,50, 55,0,60,65, 240, 200,270, 375, 480, 585, 390,100, 395, 105, 125, 115, 130, 140, 145, 150, 160, 165, 170, 175,)
 }
 search_space, params_names = SolverTuner.generate_grid(search_space)
-solver_tuner = SolverTuner(search_space=search_space, params_names= params_names, shuffle= True )
+solver_tuner = SolverTuner(search_space=search_space, params_names= params_names, shuffle= False )
 
-params = {"timeout": 3000,
+params = {"timeout": 2000,
           "target_cost": int(cost_opt),
-          "backend": "CPU"}
+          "backend": "Loihi2"}
     #print(params)
 def fitness(cost, step_to_sol):
-        return -cost 
+        return - step_to_sol if cost <= params['target_cost'] \
+         else - float("inf")
 
-fitness_target = -cost_opt
+fitness_target = -500
 
 hyperparams, success = solver_tuner.tune(
                 solver=solver,
@@ -91,15 +88,6 @@ hyperparams, success = solver_tuner.tune(
                 fitness_target=fitness_target
             )
 print(f"{hyperparams, success}")
-
-result = solver_tuner.results
-df = pd.DataFrame(result)
-df.to_csv("grid_search_results")
-sns.heatmap(df.pivot_table(index=["noise_amplitude", "step_size"], values="cost", aggfunc="max"))
-import matplotlib.pyplot as plt
-plt.savefig('grid_search_results.png')
-
-print(result)
 
 # Find the optimal solution to the MIS problem
 solution_opt = mis.find_maximum_independent_set()

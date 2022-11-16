@@ -95,6 +95,7 @@ class SolverTuner:
             solver_params["hyperparameters"] = hyperparams
             solver.solve(**solver_params)
             cost = solver.last_run_report["cost"]
+            print(cost, hyperparams)
             step_to_sol = solver.last_run_report["steps_to_solution"]
             fitness = fitness_fn(cost, step_to_sol)
             self._store_trial(hyperparams, cost, step_to_sol, fitness)
